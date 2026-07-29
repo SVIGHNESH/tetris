@@ -71,7 +71,7 @@ class Game {
   // deserialiser uses it, and it overwrites everything.
   Game(int rows, int cols);
 
-  void apply_move(Move move);
+  bool apply_move(Move move);
   void gravity_tick();
   void try_move(Offset delta);
   bool try_rotate(bool clockwise);

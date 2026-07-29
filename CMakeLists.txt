@@ -63,6 +63,7 @@ if(TETRIS_BUILD_TESTS)
     tests/test_piece.cpp
     tests/test_board.cpp
     tests/test_game.cpp
+    tests/test_scoring.cpp
   )
   target_link_libraries(tetris_tests PRIVATE tetris_core tetris_warnings Catch2::Catch2WithMain)
 

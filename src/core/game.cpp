@@ -66,22 +66,29 @@ void Game::print(std::ostream& out) const {
 TickResult Game::tick(Move move) {
   if (game_over_) return TickResult::GameOver;
 
-  apply_move(move);
-  if (!game_over_) gravity_tick();
+  // A move that locks a piece consumes the whole tick, so the piece that
+  // respawns behind it gets its full gravity interval rather than arriving
+  // one tick into it.
+  const bool locked = apply_move(move);
+  if (!locked && !game_over_) gravity_tick();
 
   return game_over_ ? TickResult::GameOver : TickResult::Continue;
 }
 
-void Game::apply_move(Move move) {
+// Returns true when the move locked the falling piece.
+bool Game::apply_move(Move move) {
   switch (move) {
     case Move::Left: try_move({0, -1}); break;
     case Move::Right: try_move({0, 1}); break;
     case Move::RotateCW: try_rotate(true); break;
     case Move::RotateCCW: try_rotate(false); break;
-    case Move::Drop: hard_drop(); break;
     case Move::Hold: hold(); break;
     case Move::None: break;
+    case Move::Drop:
+      hard_drop();
+      return true;
   }
+  return false;
 }
 
 void Game::try_move(Offset delta) {
