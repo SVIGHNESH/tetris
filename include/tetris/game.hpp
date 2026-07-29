@@ -20,7 +20,9 @@ enum class TickResult { Continue, GameOver };
 
 class Game {
  public:
-  static constexpr int kDefaultRows = 22;
+  // A 20 row field is the standard, and it is what lets the whole UI, hint
+  // line included, fit an 80x24 terminal.
+  static constexpr int kDefaultRows = 20;
   static constexpr int kDefaultCols = 10;
 
   Game(int rows, int cols, std::uint32_t seed);
