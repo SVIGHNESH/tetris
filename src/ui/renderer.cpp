@@ -224,7 +224,8 @@ void Renderer::draw_too_small(const Game& game) {
   const int needed_cols = game.cols() * kCellWidth + 2 + kPanelGap + kPanelWidth;
   mvprintw(0, 0, "This terminal is %dx%d.", terminal_.cols(), terminal_.rows());
   mvprintw(1, 0, "Tetris needs at least %dx%d.", needed_cols, needed_rows);
-  mvprintw(3, 0, "Resize the window, or press q to quit.");
+  // Kept short enough not to wrap on the narrow terminals that get here.
+  mvprintw(3, 0, "Resize, or press q to quit.");
   refresh();
 }
 

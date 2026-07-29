@@ -181,6 +181,33 @@ TEST_CASE("an I piece kicks off the left wall") {
   }
 }
 
+TEST_CASE("rotation kicks clear of the stack inside a notch") {
+  // Columns 0 and 1 are solid from row 3 down, so a piece rotating flat at
+  // row 4 has to shift two columns clear of them to find room.
+  Board board(20, 10);
+  for (int row = 3; row < 20; ++row) {
+    board.set(row, 0, Cell::T);
+    board.set(row, 1, Cell::T);
+  }
+
+  Game game(std::move(board), seed_with_first_piece(Tetromino::I));
+
+  game.tick(Move::RotateCW);    // vertical, in column 5
+  repeat(game, Move::Left, 3);  // as far left as the stack allows
+  REQUIRE(game.falling().origin().col == 0);
+
+  idle(game, kGravity[0]);  // down beside the stack
+  REQUIRE(game.falling().origin().row == 1);
+
+  game.tick(Move::RotateCW);
+  REQUIRE(game.falling().orientation() == 2);
+  REQUIRE(game.falling().origin().col == 2);  // kicked clear
+  for (const Offset& c : game.falling().cells()) {
+    REQUIRE((is_empty(game.at(c.row, c.col)) ||
+             game.at(c.row, c.col) == game.falling().cell()));
+  }
+}
+
 TEST_CASE("rotation fails when a one-wide well leaves genuinely no room") {
   // Columns 0 and 2 are solid from row 4 down, leaving column 1 as a well
   // that is open at the top.

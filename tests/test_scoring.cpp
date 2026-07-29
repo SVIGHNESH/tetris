@@ -68,6 +68,10 @@ TEST_CASE("the level tracks the line count through a long played game") {
   Game game(20, 10, 2024);
 
   int highest_level = 0;
+  int previous_score = 0;
+  int previous_lines = 0;
+  int previous_level = 0;
+
   const int drops = play_greedy(game, 2000, [&](const Game& state) {
     // The engine's level bookkeeping carries overshoot forward, so this holds
     // no matter how many lines a single drop clears.
@@ -75,6 +79,20 @@ TEST_CASE("the level tracks the line count through a long played game") {
             std::min(kMaxLevel, state.lines_cleared() / kLinesPerLevel));
     REQUIRE(state.lines_remaining() >= 1);
     REQUIRE(state.lines_remaining() <= kLinesPerLevel);
+
+    // Every clear along the way is checked against the points table at
+    // whatever level it happened on, which covers the multiplier across the
+    // whole range rather than only at level 0.
+    const int cleared = state.lines_cleared() - previous_lines;
+    REQUIRE(cleared >= 0);
+    REQUIRE(cleared <= kCellsPerPiece);
+    REQUIRE(state.score() - previous_score ==
+            kLineMultiplier[static_cast<std::size_t>(cleared)] *
+                (previous_level + 1));
+
+    previous_score = state.score();
+    previous_lines = state.lines_cleared();
+    previous_level = state.level();
     highest_level = std::max(highest_level, state.level());
   });
 
