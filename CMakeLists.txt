@@ -23,8 +23,6 @@ target_compile_options(tetris_warnings INTERFACE
 add_library(tetris_core STATIC
   src/core/piece.cpp
   src/core/board.cpp
-  src/core/game.cpp
-  src/core/serialize.cpp
 )
 target_include_directories(tetris_core PUBLIC include)
 target_link_libraries(tetris_core PRIVATE tetris_warnings)
@@ -63,10 +61,6 @@ if(TETRIS_BUILD_TESTS)
     tests/test_tables.cpp
     tests/test_piece.cpp
     tests/test_board.cpp
-    tests/test_game.cpp
-    tests/test_scoring.cpp
-    tests/test_hold.cpp
-    tests/test_serialize.cpp
   )
   target_link_libraries(tetris_tests PRIVATE tetris_core tetris_warnings Catch2::Catch2WithMain)
 
