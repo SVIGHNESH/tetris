@@ -89,4 +89,9 @@ constexpr std::span<const Offset> kicks_for(Tetromino type) {
 inline constexpr std::array<int, kCellsPerPiece + 1> kLineMultiplier = {
     0, 40, 100, 300, 1200};
 
+// Points per row travelled under the player's own power, guideline values.
+// Unlike the clear points these are flat, never scaled by level.
+inline constexpr int kSoftDropPoints = 1;
+inline constexpr int kHardDropPoints = 2;
+
 }  // namespace tetris

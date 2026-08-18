@@ -104,11 +104,16 @@ struct Placement {
   int steps = 0;  // negative is left
 };
 
-inline void apply(Game& game, Placement placement) {
+// Returns the rows the final hard drop travelled, so a caller checking the
+// score can account for the drop points.
+inline int apply(Game& game, Placement placement) {
   for (int i = 0; i < placement.rotations; ++i) game.tick(Move::RotateCW);
   const Move direction = placement.steps < 0 ? Move::Left : Move::Right;
   for (int i = 0; i < std::abs(placement.steps); ++i) game.tick(direction);
+  const int fell =
+      game.landing_position().origin().row - game.falling().origin().row;
   game.tick(Move::Drop);
+  return fell;
 }
 
 // Shape of the settled stack. The falling piece has to be excluded because
@@ -182,15 +187,15 @@ inline Placement best_placement(const Game& game) {
   return best;
 }
 
-// Plays greedily, calling `after_drop` once per placement. Stops on game over
-// or after `max_drops` pieces.
+// Plays greedily, calling `after_drop(game, rows_hard_dropped)` once per
+// placement. Stops on game over or after `max_drops` pieces.
 template <typename F>
 int play_greedy(Game& game, int max_drops, F&& after_drop) {
   int drops = 0;
   while (drops < max_drops && !game.game_over()) {
-    apply(game, best_placement(game));
+    const int fell = apply(game, best_placement(game));
     ++drops;
-    after_drop(game);
+    after_drop(game, fell);
   }
   return drops;
 }

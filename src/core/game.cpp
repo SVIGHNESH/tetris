@@ -122,7 +122,9 @@ bool Game::try_rotate(bool clockwise) {
 }
 
 void Game::hard_drop() {
-  falling_ = landing_position();
+  const Piece landing = landing_position();
+  points_ += kHardDropPoints * (landing.origin().row - falling_.origin().row);
+  falling_ = landing;
   lock_and_respawn();
 }
 
@@ -131,7 +133,10 @@ void Game::hard_drop() {
 // failed drop deliberately resets nothing: soft drop must never extend the
 // lock delay, or holding down would stall a grounded piece.
 void Game::soft_drop() {
-  if (try_move({1, 0})) reset_gravity();
+  if (try_move({1, 0})) {
+    reset_gravity();
+    points_ += kSoftDropPoints;
+  }
 }
 
 void Game::gravity_tick() {

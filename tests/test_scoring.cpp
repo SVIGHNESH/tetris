@@ -11,10 +11,13 @@ namespace {
 
 // Fills every row from `from` down so that only the columns the first piece
 // will land in are left open, then drops it. Returns the game afterwards.
-Game drop_into_primed_board(std::uint32_t seed, int& rows_completed) {
+Game drop_into_primed_board(std::uint32_t seed, int& rows_completed,
+                            int& rows_fallen) {
   auto primed = prime_for_first_drop(20, 10, seed);
   rows_completed = primed.rows_completed;
   Game game(std::move(primed.board), seed);
+  rows_fallen =
+      game.landing_position().origin().row - game.falling().origin().row;
   game.tick(Move::Drop);
   return game;
 }
@@ -26,21 +29,24 @@ TEST_CASE("clearing lines scores from the points table") {
   // four, but the piece arrives unrotated.
   const std::uint32_t seed = seed_with_first_piece(Tetromino::I);
   int completed = 0;
-  const Game game = drop_into_primed_board(seed, completed);
+  int fell = 0;
+  const Game game = drop_into_primed_board(seed, completed, fell);
 
   REQUIRE(completed == 1);
   REQUIRE(game.lines_cleared() == 1);
-  REQUIRE(game.score() == kLineMultiplier[1]);  // level 0, multiplier 1
+  // Level 0, multiplier 1, plus the hard drop's own points.
+  REQUIRE(game.score() == kLineMultiplier[1] + kHardDropPoints * fell);
 }
 
 TEST_CASE("a two-row piece scores a double") {
   const std::uint32_t seed = seed_with_first_piece(Tetromino::O);
   int completed = 0;
-  const Game game = drop_into_primed_board(seed, completed);
+  int fell = 0;
+  const Game game = drop_into_primed_board(seed, completed, fell);
 
   REQUIRE(completed == 2);
   REQUIRE(game.lines_cleared() == 2);
-  REQUIRE(game.score() == kLineMultiplier[2]);
+  REQUIRE(game.score() == kLineMultiplier[2] + kHardDropPoints * fell);
 }
 
 TEST_CASE("a vertical I clears four rows for a tetris") {
@@ -57,10 +63,12 @@ TEST_CASE("a vertical I clears four rows for a tetris") {
 
   Game game(std::move(board), seed);
   game.tick(Move::RotateCW);
+  const int fell =
+      game.landing_position().origin().row - game.falling().origin().row;
   game.tick(Move::Drop);
 
   REQUIRE(game.lines_cleared() == 4);
-  REQUIRE(game.score() == kLineMultiplier[4]);
+  REQUIRE(game.score() == kLineMultiplier[4] + kHardDropPoints * fell);
   REQUIRE(occupied_count(game) == kCellsPerPiece);  // only the new piece
 }
 
@@ -72,7 +80,7 @@ TEST_CASE("the level tracks the line count through a long played game") {
   int previous_lines = 0;
   int previous_level = 0;
 
-  const int drops = play_greedy(game, 2000, [&](const Game& state) {
+  const int drops = play_greedy(game, 2000, [&](const Game& state, int fell) {
     // The engine's level bookkeeping carries overshoot forward, so this holds
     // no matter how many lines a single drop clears.
     REQUIRE(state.level() ==
@@ -88,7 +96,8 @@ TEST_CASE("the level tracks the line count through a long played game") {
     REQUIRE(cleared <= kCellsPerPiece);
     REQUIRE(state.score() - previous_score ==
             kLineMultiplier[static_cast<std::size_t>(cleared)] *
-                (previous_level + 1));
+                    (previous_level + 1) +
+                kHardDropPoints * fell);
 
     previous_score = state.score();
     previous_lines = state.lines_cleared();
@@ -128,10 +137,24 @@ TEST_CASE("gravity gets faster as the level rises") {
   REQUIRE(kGravity[game.level()] < kGravity[0]);
 }
 
-TEST_CASE("a drop that clears nothing scores nothing") {
+TEST_CASE("a drop that clears nothing scores only the drop points") {
   Game game(20, 10, 7);
+  const int fell =
+      game.landing_position().origin().row - game.falling().origin().row;
   game.tick(Move::Drop);
-  REQUIRE(game.score() == 0);
+  REQUIRE(game.score() == kHardDropPoints * fell);
   REQUIRE(game.lines_cleared() == 0);
   REQUIRE(game.lines_remaining() == kLinesPerLevel);
+}
+
+TEST_CASE("a soft drop scores one point per row taken") {
+  Game game(20, 10, 7);
+  repeat(game, Move::SoftDrop, 3);
+  REQUIRE(game.score() == 3 * kSoftDropPoints);
+
+  // Against the floor the drop fails, so no further points accrue.
+  repeat(game, Move::SoftDrop, game.rows());
+  const int rows_taken = game.score() / kSoftDropPoints;
+  repeat(game, Move::SoftDrop, 5);
+  REQUIRE(game.score() == rows_taken * kSoftDropPoints);
 }

@@ -38,7 +38,7 @@ TEST_CASE("a fresh game survives a save and load unchanged") {
 
 TEST_CASE("a game in progress survives a save and load unchanged") {
   Game game(20, 10, 99);
-  play_greedy(game, 40, [](const Game&) {});
+  play_greedy(game, 40, [](const Game&, int) {});
   game.tick(Move::Hold);
   idle(game, 17);
   game.tick(Move::RotateCW);
@@ -64,7 +64,7 @@ TEST_CASE("a game in progress survives a save and load unchanged") {
 
 TEST_CASE("the upcoming piece sequence is identical after a load") {
   Game game(120, 10, 555);
-  play_greedy(game, 12, [](const Game&) {});
+  play_greedy(game, 12, [](const Game&, int) {});
 
   const Game loaded = round_trip(game);
   REQUIRE(upcoming(loaded, 30) == upcoming(game, 30));
@@ -141,7 +141,7 @@ TEST_CASE("loading rejects out of range field values") {
 
 TEST_CASE("a loaded game keeps playing from where it left off") {
   Game game(20, 10, 4321);
-  play_greedy(game, 25, [](const Game&) {});
+  play_greedy(game, 25, [](const Game&, int) {});
 
   Game loaded = round_trip(game);
   for (int i = 0; i < 300; ++i) {
