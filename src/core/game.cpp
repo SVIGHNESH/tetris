@@ -78,10 +78,18 @@ TickResult Game::tick(Move move) {
 // Returns true when the move locked the falling piece.
 bool Game::apply_move(Move move) {
   switch (move) {
-    case Move::Left: try_move({0, -1}); break;
-    case Move::Right: try_move({0, 1}); break;
-    case Move::RotateCW: try_rotate(true); break;
-    case Move::RotateCCW: try_rotate(false); break;
+    case Move::Left:
+      if (try_move({0, -1})) reset_lock_delay();
+      break;
+    case Move::Right:
+      if (try_move({0, 1})) reset_lock_delay();
+      break;
+    case Move::RotateCW:
+      if (try_rotate(true)) reset_lock_delay();
+      break;
+    case Move::RotateCCW:
+      if (try_rotate(false)) reset_lock_delay();
+      break;
     case Move::SoftDrop: soft_drop(); break;
     case Move::Hold: hold(); break;
     case Move::None: break;
@@ -119,21 +127,35 @@ void Game::hard_drop() {
 }
 
 // Restarting the counter only on a successful drop is what keeps the row the
-// player took from being handed out again by gravity in the same tick.
-// Restarting it on a failed one would be lock delay, which this game does not
-// have.
+// player took from being handed out again by gravity in the same tick. A
+// failed drop deliberately resets nothing: soft drop must never extend the
+// lock delay, or holding down would stall a grounded piece.
 void Game::soft_drop() {
   if (try_move({1, 0})) reset_gravity();
 }
 
 void Game::gravity_tick() {
-  if (--ticks_till_gravity_ > 0) return;
-
-  if (try_move({1, 0})) {
-    reset_gravity();
-  } else {
-    lock_and_respawn();
+  // Grounded pieces run on the lock clock, not the gravity clock. The gravity
+  // counter freezes while grounded so a piece nudged off a ledge resumes its
+  // fall with whatever interval it had left.
+  if (!board_.fits(falling_.translated({1, 0}))) {
+    if (lock_ticks_ < 0) lock_ticks_ = kLockDelayTicks;
+    if (--lock_ticks_ <= 0) lock_and_respawn();
+    return;
   }
+  lock_ticks_ = -1;
+
+  if (--ticks_till_gravity_ > 0) return;
+  try_move({1, 0});
+  reset_gravity();
+}
+
+// A reset only counts while the piece is grounded; airborne movement is free.
+// The cap is what keeps a piece from being wiggled on the floor forever.
+void Game::reset_lock_delay() {
+  if (lock_ticks_ < 0 || lock_resets_ <= 0) return;
+  lock_ticks_ = kLockDelayTicks;
+  --lock_resets_;
 }
 
 void Game::lock_and_respawn() {
@@ -147,6 +169,8 @@ void Game::lock_and_respawn() {
   falling_ = next_;
   next_ = spawn(draw_from_bag());
   reset_gravity();
+  lock_ticks_ = -1;
+  lock_resets_ = kMaxLockResets;
 
   if (!board_.fits(falling_)) game_over_ = true;
 }
@@ -221,6 +245,8 @@ bool operator==(const Game& a, const Game& b) {
          a.lines_remaining_ == b.lines_remaining_ &&
          a.lines_cleared_ == b.lines_cleared_ &&
          a.ticks_till_gravity_ == b.ticks_till_gravity_ &&
+         a.lock_ticks_ == b.lock_ticks_ &&
+         a.lock_resets_ == b.lock_resets_ &&
          a.game_over_ == b.game_over_ && a.rng_ == b.rng_ && a.bag_ == b.bag_;
 }
 

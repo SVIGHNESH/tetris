@@ -19,7 +19,8 @@ namespace tetris {
 namespace {
 
 constexpr const char* kMagic = "TETRIS-SAVE";
-constexpr int kFormatVersion = 1;
+// Version 2 added the lock delay counters; a v1 file fails the load cleanly.
+constexpr int kFormatVersion = 2;
 
 // Without a terminator, a file truncated inside its last field still parses:
 // the reader takes the digits it can see and stops happily. The sentinel
@@ -62,6 +63,7 @@ void Game::save(std::ostream& out) const {
   out << points_ << ' ' << level_ << ' ' << lines_remaining_ << ' '
       << lines_cleared_ << ' ' << ticks_till_gravity_ << ' '
       << (game_over_ ? 1 : 0) << ' ' << (hold_used_this_piece_ ? 1 : 0) << '\n';
+  out << lock_ticks_ << ' ' << lock_resets_ << '\n';
 
   // The bag and the generator both have to travel, or the upcoming piece
   // sequence changes across a save and load.
@@ -118,6 +120,13 @@ std::optional<Game> Game::load(std::istream& in) {
   if (!read_int(in, hold_used, 0, 1)) return std::nullopt;
   game.game_over_ = game_over == 1;
   game.hold_used_this_piece_ = hold_used == 1;
+
+  if (!read_int(in, game.lock_ticks_, -1, kLockDelayTicks)) {
+    return std::nullopt;
+  }
+  if (!read_int(in, game.lock_resets_, 0, kMaxLockResets)) {
+    return std::nullopt;
+  }
 
   int bag_size = 0;
   if (!read_int(in, bag_size, 0, kTetrominoCount)) return std::nullopt;

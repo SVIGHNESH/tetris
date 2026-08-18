@@ -75,6 +75,7 @@ class Game {
 
   bool apply_move(Move move);
   void gravity_tick();
+  void reset_lock_delay();
   bool try_move(Offset delta);
   bool try_rotate(bool clockwise);
   void hard_drop();
@@ -102,6 +103,13 @@ class Game {
   int lines_remaining_ = kLinesPerLevel;
   int lines_cleared_ = 0;
   int ticks_till_gravity_ = 0;
+
+  // -1 means the piece is airborne. Grounding starts the countdown; each
+  // successful move or rotation restarts it while lock_resets_ lasts, and
+  // both reset on respawn.
+  int lock_ticks_ = -1;
+  int lock_resets_ = kMaxLockResets;
+
   bool game_over_ = false;
 
   std::mt19937 rng_;

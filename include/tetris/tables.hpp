@@ -63,6 +63,13 @@ inline constexpr std::array<int, kMaxLevel + 1> kGravity = {
     30, 28, 26, 24, 22, 20, 16, 12, 8,  4,
 };
 
+// Ticks a grounded piece waits before locking, and how many times movement or
+// rotation may restart that wait per piece. 30 ticks is half a second at the
+// 60 tick clock; the cap is the guideline's 15, there so a piece cannot be
+// wiggled on the floor forever.
+inline constexpr int kLockDelayTicks = 30;
+inline constexpr int kMaxLockResets = 15;
+
 // Wall kick candidates, tried in order; the first one that fits wins. This
 // reproduces the original's "rotate, else shift one column either way"
 // behaviour as data rather than control flow, so swapping in full SRS tables

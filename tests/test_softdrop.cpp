@@ -75,20 +75,21 @@ TEST_CASE("a soft drop against the floor is a no-op, not a lock") {
   REQUIRE(resting == target);
   REQUIRE(game.falling().type() == type);
 
-  // Still there one tick short of that interval. Two are subtracted, not one:
-  // gravity also ran on the arrival tick, after the drop restarted it.
-  repeat(game, Move::SoftDrop, kGravity[0] - 2);
+  // Grounded, so the lock clock owns the piece now. Two are subtracted, not
+  // one: the arrival tick already counted, and soft drop never hurries the
+  // lock along.
+  repeat(game, Move::SoftDrop, kLockDelayTicks - 2);
   REQUIRE(top_row(game.falling()) == resting);
   REQUIRE(game.falling().type() == type);
 }
 
-TEST_CASE("a soft dropped piece still locks on the normal gravity schedule") {
+TEST_CASE("a soft dropped piece still locks once the lock delay runs out") {
   Game game(20, 10, 1);
   repeat(game, Move::SoftDrop, game.rows());
   REQUIRE(occupied_count(game) == kCellsPerPiece);
 
-  // Resting on the floor, so the next gravity step has nowhere to go and locks.
-  idle(game, kGravity[0]);
+  // Resting on the floor with no input, so the lock delay expires and locks.
+  idle(game, kLockDelayTicks);
 
   REQUIRE(occupied_count(game) == 2 * kCellsPerPiece);
 }
