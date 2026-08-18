@@ -4,3 +4,6 @@ build/
 .cache/
 compile_commands.json
 tetris.save
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+graft/
