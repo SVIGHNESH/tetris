@@ -38,6 +38,7 @@ class Renderer {
   Layout layout(const Game& game) const;
 
   void draw_board(const Layout& layout, const Game& game);
+  void draw_ghost(const Layout& layout, const Game& game);
   void draw_panel(const Layout& layout, const Game& game);
   void draw_preview(int top, int left, std::string_view label,
                     const Piece* piece, bool dim);

@@ -142,6 +142,32 @@ void Renderer::draw_board(const Layout& layout, const Game& game) {
                 game.at(row, col), false);
     }
   }
+  draw_ghost(layout, game);
+}
+
+void Renderer::draw_ghost(const Layout& layout, const Game& game) {
+  if (game.game_over()) return;
+  const Piece ghost = game.landing_position();
+  for (const Offset& c : ghost.cells()) {
+    // at() composites the falling piece in, so a non-empty cell here is either
+    // the piece itself (ghost fully overlaps it near the floor) or a settled
+    // block; the ghost must never paint over either.
+    if (!is_empty(game.at(c.row, c.col))) continue;
+    const int y = layout.top + 1 + c.row;
+    const int x = layout.left + 1 + c.col * kCellWidth;
+    // "::" instead of a solid block so the ghost reads as a marker, not a
+    // settled piece, in both the colour and monochrome paths.
+    if (terminal_.colour()) {
+      const int pair = attr(COLOR_PAIR(colour_pair_for(ghost.cell())));
+      attron(pair | attr(A_DIM));
+      mvaddstr(y, x, "::");
+      attroff(pair | attr(A_DIM));
+    } else {
+      attron(attr(A_DIM));
+      mvaddstr(y, x, "::");
+      attroff(attr(A_DIM));
+    }
+  }
 }
 
 void Renderer::draw_preview(int top, int left, std::string_view label,
