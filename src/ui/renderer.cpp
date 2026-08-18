@@ -213,7 +213,8 @@ void Renderer::draw(const Game& game) {
       l.top + std::max(l.board_height, 2 * kPreviewHeight + kStatsHeight);
   if (hint_row < terminal_.rows()) {
     draw_centred(hint_row, 0, terminal_.cols(),
-                 "arrows move   up rotate   space drop   c hold   p pause");
+                 "arrows move  up rotate  down soft  space drop  c hold  "
+                 "p pause");
   }
   refresh();
 }

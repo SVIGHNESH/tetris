@@ -25,6 +25,18 @@ inline std::uint32_t seed_with_first_piece(Tetromino type) {
   throw std::runtime_error("no seed produces the requested first piece");
 }
 
+inline int top_row(const Piece& piece) {
+  int top = piece.cells().front().row;
+  for (const Offset& c : piece.cells()) top = std::min(top, c.row);
+  return top;
+}
+
+inline int bottom_row(const Piece& piece) {
+  int bottom = piece.cells().front().row;
+  for (const Offset& c : piece.cells()) bottom = std::max(bottom, c.row);
+  return bottom;
+}
+
 inline void fill_row(Board& board, int row, Cell cell = Cell::T) {
   for (int col = 0; col < board.cols(); ++col) board.set(row, col, cell);
 }

@@ -119,6 +119,7 @@ std::optional<Move> move_for_key(int key) {
       return Move::RotateCCW;
     case KEY_DOWN:
     case 'j':
+      return Move::SoftDrop;
     case ' ':
       return Move::Drop;
     case 'c':

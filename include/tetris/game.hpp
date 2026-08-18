@@ -75,9 +75,10 @@ class Game {
 
   bool apply_move(Move move);
   void gravity_tick();
-  void try_move(Offset delta);
+  bool try_move(Offset delta);
   bool try_rotate(bool clockwise);
   void hard_drop();
+  void soft_drop();
   void hold();
   void lock_and_respawn();
   void clear_lines_and_score();

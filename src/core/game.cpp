@@ -82,6 +82,7 @@ bool Game::apply_move(Move move) {
     case Move::Right: try_move({0, 1}); break;
     case Move::RotateCW: try_rotate(true); break;
     case Move::RotateCCW: try_rotate(false); break;
+    case Move::SoftDrop: soft_drop(); break;
     case Move::Hold: hold(); break;
     case Move::None: break;
     case Move::Drop:
@@ -91,9 +92,11 @@ bool Game::apply_move(Move move) {
   return false;
 }
 
-void Game::try_move(Offset delta) {
+bool Game::try_move(Offset delta) {
   const Piece candidate = falling_.translated(delta);
-  if (board_.fits(candidate)) falling_ = candidate;
+  if (!board_.fits(candidate)) return false;
+  falling_ = candidate;
+  return true;
 }
 
 bool Game::try_rotate(bool clockwise) {
@@ -115,12 +118,18 @@ void Game::hard_drop() {
   lock_and_respawn();
 }
 
+// Restarting the counter only on a successful drop is what keeps the row the
+// player took from being handed out again by gravity in the same tick.
+// Restarting it on a failed one would be lock delay, which this game does not
+// have.
+void Game::soft_drop() {
+  if (try_move({1, 0})) reset_gravity();
+}
+
 void Game::gravity_tick() {
   if (--ticks_till_gravity_ > 0) return;
 
-  const Piece lower = falling_.translated({1, 0});
-  if (board_.fits(lower)) {
-    falling_ = lower;
+  if (try_move({1, 0})) {
     reset_gravity();
   } else {
     lock_and_respawn();

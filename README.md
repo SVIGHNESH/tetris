@@ -31,7 +31,8 @@ Configure with `-DTETRIS_BUILD_TESTS=OFF` to skip Catch2 entirely, or `-DTETRIS_
 | left / right, `a` / `d`, `h` / `l` | move |
 | up, `w`, `k`, `x` | rotate clockwise |
 | `z` | rotate counter-clockwise |
-| down, `j`, space | hard drop |
+| down, `j` | soft drop: one row per tick, hold to fall faster |
+| space | hard drop: straight to the bottom and lock |
 | `c` | hold |
 | `p`, escape | pause menu: save, load, boss mode, restart, quit |
 | `b` | boss mode |
